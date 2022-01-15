@@ -74,13 +74,13 @@ Implementation of Colored SECOND in PyTorch for KITTI 3D Object Detetcion
    ```
 
 ## Demo
- - Run the demo with a pretrained model (Download [second_7862.pth](https://drive.google.com/file/d/1-01zsPOsqanZQqIIyy7FpNXStL3y4jdR/view?usp=sharing) and save it in colored_second/weights.)
+ - Run the demo with a pretrained model
    ```
    # Run on a single file
-   python demo.py --ckpt=weights/second_7862.pth --data_path=data/kitti/training/velodyne/000008.bin
+   python demo.py --ckpt=path_to_your_ckpt --data_path=data/kitti/training/velodyne/000008.bin
    
    # Run on a folder
-   python demo.py --ckpt=weights/second_7862.pth --data_path=data/kitti/training/velodyne
+   python demo.py --ckpt=path_to_your_ckpt --data_path=data/kitti/training/velodyne
    ```
 
 ## Training
@@ -92,12 +92,5 @@ Implementation of Colored SECOND in PyTorch for KITTI 3D Object Detetcion
 ## Evaluation
  - Run the command below to evaluate
    ```
-   python test.py --ckpt=weights/second_7862.pth
+   python test.py --ckpt=path_to_your_ckpt
    ```
- - The 3D detection performance on KITTI should be
-   | Class                | AP (R11) BEV              | AP (R11) 3D               |
-   |:--------------------:|:-------------------------:|:-------------------------:|
-   | Car (Iou=0.7)        | 90.0097, 87.9282, 86.4528 | 88.6137, 78.6245, 77.2243 |
-   | Pedestrian (Iou=0.5) | 61.9979, 56.6604, 53.8126 | 56.5544, 52.9835, 47.7343 |
-   | Cyclist (Iou=0.5)    | 84.0183, 70.7012, 65.4772 | 80.5862, 67.1589, 63.1087 |
-    * Report in different difficulties, which are Easy, Moderate and Hard.
