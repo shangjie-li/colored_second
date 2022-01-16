@@ -1,6 +1,79 @@
 import numpy as np
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+
+
+class AttentionalFusionModule(nn.Module):
+    def __init__(self, input_channels):
+        super().__init__()
+        
+        self.w_1 = nn.Sequential(
+            nn.Conv2d(input_channels, 1, kernel_size=1, stride=1, padding=0, bias=False),
+            nn.BatchNorm2d(1, eps=1e-3, momentum=0.01),
+        )
+        self.w_2 = nn.Sequential(
+            nn.Conv2d(input_channels, 1, kernel_size=1, stride=1, padding=0, bias=False),
+            nn.BatchNorm2d(1, eps=1e-3, momentum=0.01),
+        )
+        
+    def forward(self, x_1, x_2):
+        weight_1 = self.w_1(x_1)
+        weight_2 = self.w_2(x_2)
+        aw = torch.softmax(torch.cat([weight_1, weight_2], dim=1), dim=1)
+        y = x_1 * aw[:, 0:1, :, :] + x_2 * aw[:, 1:2, :, :]
+        return y.contiguous()
+
+
+class GatedFusionModule(nn.Module):
+    def __init__(self, input_channels):
+        super().__init__()
+        
+        self.conv_1 = nn.Sequential(
+            nn.Conv2d(input_channels * 2, input_channels, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.BatchNorm2d(input_channels, eps=1e-3, momentum=0.01),
+        )
+        self.conv_2 = nn.Sequential(
+            nn.Conv2d(input_channels * 2, input_channels, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.BatchNorm2d(input_channels, eps=1e-3, momentum=0.01),
+        )
+        
+        self.fusion_layer = nn.Sequential(
+            nn.Conv2d(input_channels * 2, input_channels, kernel_size=1, stride=1, padding=0, bias=False),
+            nn.BatchNorm2d(input_channels, eps=1e-3, momentum=0.01),
+        )
+        
+    def forward(self, x_1, x_2):
+        x = torch.cat([x_1, x_2], dim=1)
+        f_1 = torch.sigmoid(self.conv_1(x)) * x_1
+        f_2 = torch.sigmoid(self.conv_2(x)) * x_2
+        y = self.fusion_layer(torch.cat([f_1, f_2], dim=1))
+        return y.contiguous()
+
+
+class SharpeningFusionModule(nn.Module):
+    def __init__(self, input_channels):
+        super().__init__()
+        
+        self.fusion_layer_1x1 = nn.Sequential(
+            nn.Conv2d(input_channels * 2, input_channels, kernel_size=1, stride=1, padding=0, bias=False),
+            nn.BatchNorm2d(input_channels, eps=1e-3, momentum=0.01),
+        )
+        self.fusion_layer_3x3 = nn.Sequential(
+            nn.Conv2d(input_channels, input_channels, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.BatchNorm2d(input_channels, eps=1e-3, momentum=0.01),
+        )
+        
+    def forward(self, x_1, x_2):
+        x = torch.cat([x_1, x_2], dim=1)
+        w = torch.sigmoid(self.fusion_layer_3x3(self.fusion_layer_1x1(x)))
+        f_1 = w * x_1
+        f_2 = (1 - w) * x_2
+        sum_f = f_1 + f_2
+        max_f = torch.max(f_1, f_2)
+        mean_threshold = F.adaptive_avg_pool2d(sum_f, output_size=(1, 1)) # [B, C, 1, 1]
+        y = torch.where(max_f > mean_threshold, max_f * 2, sum_f)
+        return y.contiguous()
 
 
 class BaseBEVBackbone(nn.Module):
@@ -23,6 +96,10 @@ class BaseBEVBackbone(nn.Module):
         else:
             upsample_strides = num_upsample_filters = []
 
+        #~ self.fusion_layers = AttentionalFusionModule(input_channels)
+        #~ self.fusion_layers = GatedFusionModule(input_channels)
+        self.fusion_layers = SharpeningFusionModule(input_channels)
+        
         num_levels = len(layer_nums)
         c_in_list = [input_channels, *num_filters[:-1]]
         self.blocks = nn.ModuleList()
@@ -86,11 +163,14 @@ class BaseBEVBackbone(nn.Module):
         Returns:
         """
         spatial_features = data_dict['spatial_features']
+        semantic_features = data_dict['semantic_features']
         
         #~ features = spatial_features # 20220115, SubMConv3d(7, 16), (x, y, z, i, r, g, b), Car 3d AP: 88.4851, 78.3029, 77.1806
         #~ features = spatial_features # 20220116, SubMConv3d(3, 16), (x, y, z), Car 3d AP: 88.4338, 78.2802, 77.0889
         #~ features = spatial_features # 20220117, SubMConv3d(3, 16), (r, g, b), Car 3d AP: 87.7182, 78.0415, 76.8148
         #~ features = spatial_features # 20220118, SubMConv3d(1, 16), occupancy, Car 3d AP: 87.1878, 77.8787, 76.6703
+        
+        features = self.fusion_layers(spatial_features, semantic_features)
         
         ups = []
         ret_dict = {}
