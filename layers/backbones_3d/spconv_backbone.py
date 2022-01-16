@@ -34,6 +34,8 @@ class VoxelBackBone8x(nn.Module):
 
         self.sparse_shape = grid_size[::-1] + [1, 0, 0]
 
+        input_channels = 3 # (x, y, z)
+        
         self.conv_input = spconv.SparseSequential(
             spconv.SubMConv3d(input_channels, 16, 3, padding=1, bias=False, indice_key='subm1'),
             norm_fn(16),
@@ -95,6 +97,9 @@ class VoxelBackBone8x(nn.Module):
                 encoded_spconv_tensor: sparse tensor
         """
         voxel_features, voxel_coords = batch_dict['voxel_features'], batch_dict['voxel_coords']
+        
+        voxel_features = voxel_features[:, :3] # consider (x, y, z) in voxel_features
+        
         batch_size = batch_dict['batch_size']
         input_sp_tensor = spconv.SparseConvTensor(
             features=voxel_features,

@@ -86,9 +86,15 @@ class BaseBEVBackbone(nn.Module):
         Returns:
         """
         spatial_features = data_dict['spatial_features']
+        
+        #~ features = spatial_features # 20220115, SubMConv3d(7, 16), (x, y, z, i, r, g, b), Car 3d AP: 88.4851, 78.3029, 77.1806
+        #~ features = spatial_features # 20220116, SubMConv3d(3, 16), (x, y, z), Car 3d AP: 88.4338, 78.2802, 77.0889
+        #~ features = spatial_features # 20220117, SubMConv3d(3, 16), (r, g, b), Car 3d AP: 87.7182, 78.0415, 76.8148
+        #~ features = spatial_features # 20220118, SubMConv3d(1, 16), occupancy, Car 3d AP: 87.1878, 77.8787, 76.6703
+        
         ups = []
         ret_dict = {}
-        x = spatial_features
+        x = features
         for i in range(len(self.blocks)):
             x = self.blocks[i](x)
 
