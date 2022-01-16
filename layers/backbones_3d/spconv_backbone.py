@@ -56,39 +56,39 @@ class VoxelBackBone8x(nn.Module):
         )
 
         self.conv2_1 = spconv.SparseSequential(
-            # [1600, 1408, 41] <- [800, 704, 21]
+            # [1600, 1408, 41] -> [800, 704, 21]
             block(16, 32, 3, norm_fn=norm_fn, stride=2, padding=1, indice_key='spconv2', conv_type='spconv'),
             block(32, 32, 3, norm_fn=norm_fn, padding=1, indice_key='subm2'),
             block(32, 32, 3, norm_fn=norm_fn, padding=1, indice_key='subm2'),
         )
         self.conv2_2 = spconv.SparseSequential(
-            # [1600, 1408, 41] <- [800, 704, 21]
+            # [1600, 1408, 41] -> [800, 704, 21]
             block(16, 32, 3, norm_fn=norm_fn, stride=2, padding=1, indice_key='spconv2', conv_type='spconv'),
             block(32, 32, 3, norm_fn=norm_fn, padding=1, indice_key='subm2'),
             block(32, 32, 3, norm_fn=norm_fn, padding=1, indice_key='subm2'),
         )
 
         self.conv3_1 = spconv.SparseSequential(
-            # [800, 704, 21] <- [400, 352, 11]
+            # [800, 704, 21] -> [400, 352, 11]
             block(32, 64, 3, norm_fn=norm_fn, stride=2, padding=1, indice_key='spconv3', conv_type='spconv'),
             block(64, 64, 3, norm_fn=norm_fn, padding=1, indice_key='subm3'),
             block(64, 64, 3, norm_fn=norm_fn, padding=1, indice_key='subm3'),
         )
         self.conv3_2 = spconv.SparseSequential(
-            # [800, 704, 21] <- [400, 352, 11]
+            # [800, 704, 21] -> [400, 352, 11]
             block(32, 64, 3, norm_fn=norm_fn, stride=2, padding=1, indice_key='spconv3', conv_type='spconv'),
             block(64, 64, 3, norm_fn=norm_fn, padding=1, indice_key='subm3'),
             block(64, 64, 3, norm_fn=norm_fn, padding=1, indice_key='subm3'),
         )
 
         self.conv4_1 = spconv.SparseSequential(
-            # [400, 352, 11] <- [200, 176, 5]
+            # [400, 352, 11] -> [200, 176, 5]
             block(64, 64, 3, norm_fn=norm_fn, stride=2, padding=(0, 1, 1), indice_key='spconv4', conv_type='spconv'),
             block(64, 64, 3, norm_fn=norm_fn, padding=1, indice_key='subm4'),
             block(64, 64, 3, norm_fn=norm_fn, padding=1, indice_key='subm4'),
         )
         self.conv4_2 = spconv.SparseSequential(
-            # [400, 352, 11] <- [200, 176, 5]
+            # [400, 352, 11] -> [200, 176, 5]
             block(64, 64, 3, norm_fn=norm_fn, stride=2, padding=(0, 1, 1), indice_key='spconv4', conv_type='spconv'),
             block(64, 64, 3, norm_fn=norm_fn, padding=1, indice_key='subm4'),
             block(64, 64, 3, norm_fn=norm_fn, padding=1, indice_key='subm4'),
